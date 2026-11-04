@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import random
+import shutil
 from pathlib import Path
 
 from . import data
@@ -48,6 +49,8 @@ def train(model_id: str, out: Path, synthetic: int = 0, epochs: int = 3, batch_s
     rows = triplets(base, synthetic=synthetic, seed=seed)
     print(f"{len(rows)} training triplets", flush=True)
     del base
+    import torch
+
     device = _device()
     # Eager attention on Apple GPUs: PyTorch's fused attention there does not support dropout, which training uses.
     kwargs = {"attn_implementation": "eager"} if device == "mps" else {}
@@ -58,10 +61,12 @@ def train(model_id: str, out: Path, synthetic: int = 0, epochs: int = 3, batch_s
     args = SentenceTransformerTrainingArguments(
         output_dir=str(out / "checkpoints"), num_train_epochs=epochs, per_device_train_batch_size=batch_size,
         learning_rate=lr, warmup_ratio=0.1, batch_sampler=BatchSamplers.NO_DUPLICATES, logging_steps=10,
-        save_strategy="no", seed=seed, report_to="none", dataloader_drop_last=True, bf16=device == "cuda")
+        save_strategy="no", seed=seed, report_to="none", dataloader_drop_last=True,
+        bf16=device == "cuda" and torch.cuda.is_bf16_supported())
     SentenceTransformerTrainer(model=model, args=args, train_dataset=Dataset.from_list(rows), loss=loss).train()
     model.max_seq_length = 512
     model.save(str(out))
+    shutil.rmtree(out / "checkpoints", ignore_errors=True)
     (out / "lexsearch.json").write_text(json.dumps({"base": model_id, "synthetic": synthetic, "epochs": epochs,
                                                     "batch_size": batch_size, "lr": lr, "triplets": len(rows)}))
     return out

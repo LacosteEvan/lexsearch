@@ -1,7 +1,6 @@
 """Recompute every retrieval summary from the saved rankings (after a change to the metrics)."""
 import json
 import sys
-from pathlib import Path
 
 from lexsearch.evaluate import RESULTS, summarize
 
