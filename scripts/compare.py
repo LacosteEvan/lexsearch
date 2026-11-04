@@ -22,7 +22,7 @@ def unseen_recall(run, k=100):
     return np.array([recall_at(run[q], gold[q] - seen, k) for q in unseen_q])
 
 
-for a, b in zip(names[::2], names[1::2]):
+for a, b in zip(names[::2], names[1::2], strict=True):
     ra, rb = load_run(split, a), load_run(split, b)
     sa, sb = ranking_scores(ra, gold), ranking_scores(rb, gold)
     print(f"{b}  vs  {a}")

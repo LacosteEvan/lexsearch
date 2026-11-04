@@ -48,5 +48,5 @@
   "unseen": 0.28482779169643674
  },
  "retriever": "intfloat/multilingual-e5-small",
- "seconds_per_query": 0.003179860818992428
+ "seconds_per_query": 0.0007829062127659944
 }

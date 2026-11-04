@@ -132,7 +132,7 @@ class Rerank:
 
         self.first, self.depth, self.articles = first, depth, articles
         self.encoder = CrossEncoder(model, device=_device(), max_length=max_length)
-        self.name = f"{first.name}>{Path(model).name}"
+        self.name = f"{first.name}__rerank__{Path(model).name}"
 
     def search(self, queries: list[str], k: int = 100) -> list[list[str]]:
         out = []

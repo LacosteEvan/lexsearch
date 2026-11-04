@@ -48,5 +48,5 @@
   "unseen": 0.2935762902557934
  },
  "retriever": "BAAI/bge-m3",
- "seconds_per_query": 0.023790095297760886
+ "seconds_per_query": 0.002837583037234026
 }

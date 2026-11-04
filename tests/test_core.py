@@ -48,6 +48,12 @@ def test_parse_json_tolerates_fences():
     assert parse_json('Voici:\n```json\n{"article_ids": ["1"]}\n```') == {"article_ids": ["1"]}
 
 
+def test_parse_json_keeps_ids_around_bad_text():
+    assert parse_json('{"article_ids": ["1"]}\nNote : voir aussi {art. 2}.') == {"article_ids": ["1"]}
+    broken = '{"article_ids": ["1", "2"], "answer": "le "bail" est résilié"}'
+    assert parse_json(broken) == {"article_ids": ["1", "2"], "answer": ""}
+
+
 def test_paid_run_needs_a_cap():
     with pytest.raises(RuntimeError):
         Chat("haiku", max_cost=None)

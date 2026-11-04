@@ -22,10 +22,17 @@ class BudgetExceeded(RuntimeError):
 def parse_json(text: str) -> dict:
     """The first JSON object in a reply, tolerating Markdown fences and text around it."""
     text = re.sub(r"```(?:json)?", "", text)
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end < start:
+    start = text.find("{")
+    if start < 0:
         raise ValueError("no JSON object in the answer")
-    return json.loads(text[start:end + 1])
+    try:
+        return json.JSONDecoder().raw_decode(text, start)[0]
+    except json.JSONDecodeError:
+        # The ids come first: a broken answer string after them (an unescaped quote) shouldn't lose them.
+        ids = re.search(r'"article_ids"\s*:\s*(\[[^\]]*\])', text)
+        if ids is None:
+            raise
+        return {"article_ids": json.loads(ids.group(1)), "answer": ""}
 
 
 def _with_retries(call, tries: int = 6):

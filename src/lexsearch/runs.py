@@ -60,22 +60,20 @@ def summarize(path: Path, split: str) -> dict:
     rows = [json.loads(line) for line in path.open()]
     scores = {k: np.array([set_scores(frozenset(r["cited"]), gold[r["id"]])[k] for r in rows])
               for k in ("precision", "recall", "f1")}
-    # Each gold article, for the decomposition: cited, shown but not cited (reading), never shown (search).
-    cited = shown = missed = 0
+    # Where gold articles end up: cited, shown but not cited (reading), never shown (search). Shares are averaged
+    # per question, like recall, so the few questions with 20+ gold articles don't dominate.
+    shares = []
     for r in rows:
-        for a in gold[r["id"]]:
-            if a in r["cited"]:
-                cited += 1
-            elif a in r["shown"]:
-                shown += 1
-            else:
-                missed += 1
-    total = cited + shown + missed
+        g = gold[r["id"]]
+        cited = len(g.intersection(r["cited"]))
+        shown = len(g.intersection(r["shown"]) - set(r["cited"]))
+        shares.append((cited / len(g), shown / len(g), (len(g) - cited - shown) / len(g)))
+    cited, shown, missed = np.mean(shares, axis=0)
     out = {"run": path.stem, "n": len(rows), "errors": sum(bool(r["error"]) for r in rows)}
     for k, v in scores.items():
         out[k] = {"mean": float(v.mean()), "ci": list(bootstrap_ci(v))}
     out |= {
-        "gold_cited": cited / total, "gold_shown_not_cited": shown / total, "gold_never_shown": missed / total,
+        "gold_cited": float(cited), "gold_shown_not_cited": float(shown), "gold_never_shown": float(missed),
         "articles_cited": float(np.mean([len(r["cited"]) for r in rows])),
         "cost_per_1k": 1000 * float(np.mean([r["cost_usd"] for r in rows])),
         "latency_s": float(np.median([r["latency_s"] for r in rows])),
